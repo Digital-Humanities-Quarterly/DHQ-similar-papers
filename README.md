@@ -17,4 +17,4 @@ More details on each of the three approaches described above will be provided in
 
 
 ## Meeting notes:
-- To be added here
+- [Paper Recommendations Meetings Notes](https://drive.google.com/drive/folders/1N3-368_BLbl5exN62npnUPpcPIpS1CWW?usp=sharing)
