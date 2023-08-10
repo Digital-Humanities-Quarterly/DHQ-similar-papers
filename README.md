@@ -15,6 +15,26 @@ More details on each of the three approaches described above will be provided in
 ## Ben's approach:
 Ben's approach to similar paper recommendation involves the construction of embeddings using transformers, namely, AI2's [https://github.com/allenai/specter](SPECTER) ("Document-level Representation Learning using Citation-informed Transformers"). In particular, SPECTER has been pre-trained on scientific papers using a similar papers task in order to produce high-performing, domain-specific embeddings. Utilizing the pre-trained [HuggingFace implementation](https://huggingface.co/allenai/specter), it is straightforward to generate embeddings for our similar papers task -- namely, the title and abstract for each paper is concatenated and treated as the textual input. A technical overview of SPECTER can be found in [this ArXiv paper](https://arxiv.org/abs/2004.07180).
 
+From the SPECTER repo, where embeddings are created for a simple database of papers (titles + abstracts):
+```
+from transformers import AutoTokenizer, AutoModel
+
+# load model and tokenizer
+tokenizer = AutoTokenizer.from_pretrained('allenai/specter')
+model = AutoModel.from_pretrained('allenai/specter')
+
+papers = [{'title': 'BERT', 'abstract': 'We introduce a new language representation model called BERT'},
+          {'title': 'Attention is all you need', 'abstract': ' The dominant sequence transduction models are based on complex recurrent or convolutional neural networks'}]
+
+# concatenate title and abstract
+title_abs = [d['title'] + tokenizer.sep_token + (d.get('abstract') or '') for d in papers]
+# preprocess the input
+inputs = tokenizer(title_abs, padding=True, truncation=True, return_tensors="pt", max_length=512)
+result = model(**inputs)
+# take the first token in the batch as the embedding
+embeddings = result.last_hidden_state[:, 0, :]
+```
+
 ## Meeting notes:
 - [Paper Recommendations Meetings Notes](https://drive.google.com/drive/folders/1N3-368_BLbl5exN62npnUPpcPIpS1CWW?usp=sharing)
 
