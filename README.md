@@ -12,9 +12,13 @@ Each of these three approaches have distinct advantages, ranging from clearly in
 
 More details on each of the three approaches described above will be provided in this documentation as they are implemented.
 
-## Relevant resources:
-- To be listed here
-
+## Ben's approach:
+Ben's approach to similar paper recommendation involves the construction of embeddings using transformers, namely, AI2's [https://github.com/allenai/specter](SPECTER) ("Document-level Representation Learning using Citation-informed Transformers"). In particular, SPECTER has been pre-trained on scientific papers using a similar papers task in order to produce high-performing, domain-specific embeddings. Utilizing the pre-trained [HuggingFace implementation](https://huggingface.co/allenai/specter), it is straightforward to generate embeddings for our similar papers task -- namely, the title and abstract for each paper is concatenated and treated as the textual input. A technical overview of SPECTER can be found in [this ArXiv paper](https://arxiv.org/abs/2004.07180).
 
 ## Meeting notes:
 - [Paper Recommendations Meetings Notes](https://drive.google.com/drive/folders/1N3-368_BLbl5exN62npnUPpcPIpS1CWW?usp=sharing)
+
+
+## Additional relevant resources:
+- [SPECTER](https://github.com/allenai/specter)
+
