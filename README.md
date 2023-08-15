@@ -35,7 +35,7 @@ result = model(**inputs)
 embeddings = result.last_hidden_state[:, 0, :]
 ```
 
-Ben's full working implementation can be found in [this Jupyter notebook](generate_SPECTER_embeddings.ipynb). The SPECTER embeddings are used to generate the 10 most similar papers to each DHQ paper in the corpus (as of 2022). These recommendations can be found in [2022-dhq-article-with-abstracts-and-SPECTER-recommendations.csv](2022-dhq-article-with-abstracts-and-SPECTER-recommendations.csv).
+Ben's full working implementation can be found in [this Jupyter notebook](generate_SPECTER_embeddings.ipynb). The SPECTER embeddings are used to generate the 10 most similar papers to each DHQ paper in the corpus (as of 2022). These recommendations can be found in [2022-dhq-articles-with-abstracts-and-SPECTER-recommendations.csv](2022-dhq-articles-with-abstracts-and-SPECTER-recommendations.csv).
 
 ## Meeting notes:
 - [Paper Recommendations Meetings Notes](https://drive.google.com/drive/folders/1N3-368_BLbl5exN62npnUPpcPIpS1CWW?usp=sharing)
