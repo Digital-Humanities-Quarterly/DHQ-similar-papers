@@ -1,0 +1,3 @@
+[submodule "dhq-journal"]
+	path = dhq-journal
+	url = https://github.com/Digital-Humanities-Quarterly/dhq-journal
