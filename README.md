@@ -1,6 +1,8 @@
 # DHQ-similar-papers
 
-This repository contains scripts for creating a paper recommendation system for the journal Digital Humanities Quarterly (DHQ). Recommendations are based on the DHQ Classification Scheme, an editor-assigned controlled vocabulary comprising 88 terms, such as `#gender` and `#machine_learning`.
+This repository contains scripts for creating a paper recommendation system for the journal Digital Humanities Quarterly
+(DHQ). Recommendations are based on the DHQ Classification Scheme, an editor-assigned controlled vocabulary comprising 
+88 terms, such as `#gender` and `#machine_learning`.
 
 The workflow is as follows:
 1. Initialize the official DHQ repository as a submodule.
