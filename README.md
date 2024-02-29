@@ -30,7 +30,7 @@ python -m run
 2. The Volume and Issue information is missing for paper 000664.
 3. Papers with indices 000678 and 000722 do not have associated .xml files.
 4. Papers with indices 000710 and 000716 lack dhq_keywords associations (thus, they will not appear in recommendations).
-5. The publication year is missing for 15 papers (refer to run.py for a comprehensive list).
+5. The publication year is missing for 15 papers (refer to `run.py` for a comprehensive list).
 
 ## To-Do List:
 1. Write unit tests.
@@ -39,5 +39,5 @@ python -m run
 ## License
 MIT
 
-## Authors
+## Author
 The Digital Humanities Data Analytics Team
