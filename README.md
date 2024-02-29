@@ -35,3 +35,9 @@ python -m run
 ## To-Do List:
 1. Write unit tests.
 2. Implement a CI/CD process to automatically update the zfill spreadsheet.
+
+## License
+MIT
+
+## Authors
+The Digital Humanities Data Analytics Team
