@@ -40,5 +40,5 @@ python -m run
 MIT
 
 ## Author
-The Digital Humanities Data Analytics Team
+The Digital Humanities Quarterly Data Analytics Team
 
