@@ -149,7 +149,7 @@ def find_similar_papers_by_paper_id(
 
 if __name__ == "__main__":
     print("*" * 80)
-    print("Generating similar papers based on the DHQ Classification Scheme...")
+    print("Generating papers recommendations based on the DHQ Classification Scheme...")
     # 730 articles are included in the recommendation system as per Apr 2024
     xml_folders = extract_article_folders("dhq-journal/articles")
 
@@ -197,7 +197,7 @@ if __name__ == "__main__":
         for i, r in enumerate(raw_recommend):
             recommend[f"Recommendation {i + 1}"] = r
 
-        # Add the URL at the end
+        # add the URL at the end
         recommend["url"] = m["url"]
         recommends.append(recommend)
     # sort list based on 'Article ID'
@@ -208,7 +208,7 @@ if __name__ == "__main__":
     # move 'url' to the end to follow naming conventions is a previous repo
     header.append(header.pop(header.index("url")))
 
-    tsv_path = "dhq-recs-zfill.tsv"
+    tsv_path = "dhq-recs-zfill-keyword.tsv"
     with open(tsv_path, "w", newline="", encoding="utf-8") as file:
         writer = csv.DictWriter(file, fieldnames=header, delimiter="\t")
         writer.writeheader()
