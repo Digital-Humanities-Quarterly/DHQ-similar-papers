@@ -1,4 +1,4 @@
-# Two DHQ Similar Article Recommendation Systems
+# Two DHQ Article Recommendation Systems
 
 
 This repository contains scripts for creating two separate paper recommendation systems for the journal 
