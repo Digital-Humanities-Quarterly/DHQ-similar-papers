@@ -116,7 +116,7 @@ if __name__ == "__main__":
     # paper_ids = [d['paper_id'] for d in metadata]
 
     recommends = []
-    for index, m in enumerate(metadata[:10]):
+    for index, m in enumerate(metadata):
         # pick up the naming used in an early repo
         recommend = {
             "Article ID": m["paper_id"],
