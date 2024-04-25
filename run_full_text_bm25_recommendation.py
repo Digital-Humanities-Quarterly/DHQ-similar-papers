@@ -5,7 +5,7 @@ This module contains scripts to find the most similar papers based on the full t
 
 __author__ = "The Digital Humanities Quarterly Data Analytics Team"
 __license__ = "MIT"
-__version__ = "0.0.1"
+__version__ = "0.0.2"
 
 import csv
 import os
@@ -86,9 +86,7 @@ def compute_bm25_scores(
 
 if __name__ == "__main__":
     print("*" * 80)
-    print(
-        "Generating paper recommendations based on the full text using BM25..."
-    )
+    print("Generating paper recommendations based on the full text using BM25...")
     # 730 articles are included in the recommendation system as per Apr 2024
     xml_folders = extract_article_folders("dhq-journal/articles")
 
@@ -113,7 +111,6 @@ if __name__ == "__main__":
     ]
     # computing similarity in a doc * doc matrix
     scores = compute_bm25_scores(documents, documents)
-    # paper_ids = [d['paper_id'] for d in metadata]
 
     recommends = []
     for index, m in enumerate(metadata):
@@ -128,13 +125,11 @@ if __name__ == "__main__":
             "Abstract": m["abstract"],
         }
         # exclude the document itself
-        top_indices = np.argsort(scores[index, :])[::-1][1:11]
+        top_indices = np.argsort(scores.toarray()[index, :])[::-1][1:11]
         recommend.update(
             {
-                **{
-                    f"Recommendation {i + 1}": f"{metadata[idx]['paper_id']}"
-                    for i, idx in enumerate(top_indices)
-                }
+                f"Recommendation {i + 1}": metadata[idx]["paper_id"]
+                for i, idx in enumerate(top_indices)
             }
         )
         # add the URL at the end
