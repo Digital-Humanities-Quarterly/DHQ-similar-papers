@@ -41,7 +41,7 @@ python -m pip install -r requirements.txt
 # Execute the keyword-based recommendation system
 python -m run_keyword_based_recommendation
 
-# Execute the full text-based recommendation system
+# Execute the BM25 recommendation system
 python -m run_full_text_bm25_recommendation
 ```
 
