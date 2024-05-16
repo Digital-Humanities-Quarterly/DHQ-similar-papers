@@ -1,0 +1,60 @@
+name: Update recommendations if DHQ repo changes
+
+on:
+  schedule:
+    # runs every Sunday at midnight
+    - cron: '0 0 * * 0'
+
+jobs:
+  check-and-recompute:
+    runs-on: ubuntu-20.04
+
+    steps:
+      # step 1: checkout the repository
+      - name: Checkout repository
+        uses: actions/checkout@v2
+        with:
+          submodules: true # Checkout submodules as well
+
+      # step 2: setup Python environment
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.10'
+
+      # step 3: install dependencies
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      # step 4: check for submodule updates
+      - name: Check for submodule updates
+        id: submodule_check
+        run: |
+          git submodule update --remote --merge
+          if [ "$(git status --porcelain)" != "" ]; then
+            echo "::set-output name=submodule_updated::true"
+          else
+            echo "::set-output name=submodule_updated::false"
+          fi
+
+      # step 5: rerun the computations if submodule is updated
+      - name: Run keyword-based recommendation system
+        if: steps.submodule_check.outputs.submodule_updated == 'true'
+        run: python run_keyword_based_recommendation.py
+
+      - name: Run BM25 recommendation system
+        if: steps.submodule_check.outputs.submodule_updated == 'true'
+        run: python run_full_text_bm25_recommendation.py
+
+      # step 6: commit and push changes if there are any
+      - name: Commit and push changes
+        if: steps.submodule_check.outputs.submodule_updated == 'true'
+        run: |
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+          TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+          git add dhq-recs*.tsv
+          git commit -m "feat: update recommendations due to submodule update on ${TIMESTAMP}"
+          git push
