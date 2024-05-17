@@ -33,7 +33,7 @@ jobs:
       - name: Check for submodule updates
         id: submodule_check
         run: |
-          git submodule update --remote --merge
+          git submodule update --remote
           if [ "$(git status --porcelain)" != "" ]; then
             echo "::set-output name=submodule_updated::true"
           else
