@@ -85,10 +85,10 @@ def remove_excessive_space(t: str) -> str:
 
 def extract_relevant_elements(xml_folder: str) -> Dict[str, Optional[str]]:
     """
-    Extract relevant elements from a DHQ article XML file, including paper_id,authors
+    Extract relevant elements from a DHQ article XML file, including paper_id, authors
     (pipe concatenated if multiple), affiliations (pipe concatenated if multiple),
-    title, abstract, url (heuristically construed with volume/issue/id), and
-    dhq_keywords.
+    title, abstract, url (heuristically construed with volume/issue/id), volume, issue,
+    and dhq_keywords.
 
     Args:
         xml_folder: A path to a DHQ article XML file
@@ -107,7 +107,13 @@ def extract_relevant_elements(xml_folder: str) -> Dict[str, Optional[str]]:
     # extract title
     title = remove_excessive_space(soup.find("title").text)
 
-    # heuristically construct url
+    # extract publication year, volume, and issue
+    publication_date = soup.find("date", {"when": True})
+    if publication_date:
+        publication_year = publication_date["when"][:4]
+    else:
+        raise RuntimeError(f'{paper_id} does not have publication year in xml.')
+
     volume = (
         soup.find("idno", {"type": "volume"}).text
         if soup.find("idno", {"type": "volume"})
@@ -120,6 +126,8 @@ def extract_relevant_elements(xml_folder: str) -> Dict[str, Optional[str]]:
         if soup.find("idno", {"type": "issue"})
         else None
     )
+
+    # heuristically construct url using volume, issue, and paper_id
     url = (
         f"https://digitalhumanities.org/dhq/vol/"
         f"{volume}/{issue}/{paper_id}/{paper_id}.html"
@@ -170,6 +178,9 @@ def extract_relevant_elements(xml_folder: str) -> Dict[str, Optional[str]]:
     return {
         "paper_id": paper_id,
         "title": title.strip(),
+        "volume": volume,
+        "issue": issue,
+        "publication_year": publication_year.strip(),
         "authors": authors.strip(),
         "affiliations": affiliations.strip(),
         "abstract": abstract.strip(),
