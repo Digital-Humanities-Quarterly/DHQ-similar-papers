@@ -35,27 +35,27 @@ jobs:
         run: |
           git submodule update --remote
           if [ "$(git status --porcelain)" != "" ]; then
-            echo "::set-output name=submodule_updated::true"
+            echo "submodule_updated=true" >> $GITHUB_ENV
           else
-            echo "::set-output name=submodule_updated::false"
+            echo "submodule_updated=false" >> $GITHUB_ENV
           fi
 
       # step 5: rerun the computations if submodule is updated
       - name: Run keyword-based recommendation system
-        if: steps.submodule_check.outputs.submodule_updated == 'true'
+        if: env.submodule_updated == 'true'
         run: python run_kwd_recs.py
 
       - name: Run BM25 recommendation system
-        if: steps.submodule_check.outputs.submodule_updated == 'true'
+        if: env.submodule_updated == 'true'
         run: python run_bm25_recs.py
 
       - name: Run SPECTER recommendation system
-        if: steps.submodule_check.outputs.submodule_updated == 'true'
+        if: env.submodule_updated == 'true'
         run: python run_spctr_recs.py
 
       # step 6: commit and push changes if there are any
       - name: Commit and push changes
-        if: steps.submodule_check.outputs.submodule_updated == 'true'
+        if: env.submodule_updated == 'true'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
