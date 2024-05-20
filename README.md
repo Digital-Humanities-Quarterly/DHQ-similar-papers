@@ -60,7 +60,7 @@ python -m run_spctr_recs
 ```
 
 The ten most similar article IDs for each of the systems are documented in
-- [`dhq-recs-zfill-kwd.tsv`](https://github.com/Wang-Haining/DHQ-similar-papers/blob/main/run_kwd_recs.py)
+- [`dhq-recs-zfill-kwd.tsv`](https://github.com/Wang-Haining/DHQ-similar-papers/blob/main/dhq-recs-zfill-kwd.tsv)
 - [`dhq-recs-zfill-bm25.tsv`](https://github.com/Wang-Haining/DHQ-similar-papers/blob/main/dhq-recs-zfill-bm25.tsv), and
 - [`dhq-recs-zfill-spctr.tsv`](https://github.com/Wang-Haining/DHQ-similar-papers/blob/main/dhq-recs-zfill-spctr.tsv).
 
