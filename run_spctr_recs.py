@@ -14,10 +14,9 @@ __version__ = "0.0.3"
 
 import csv
 import json
+import math
 import os
 from typing import List
-
-import math
 
 import numpy as np
 import torch
@@ -29,26 +28,32 @@ from utils import (extract_article_folders, extract_relevant_elements,
                    get_articles_in_editorial_process)
 
 D_MODEL = 768
-ANNOY_INDEX_PATH = "specter2.ann"
-EMBEDDINGS_PATH = "specter2_embeddings.npy"
-PAPER_ID_LOOKUP_PATH = "specter2_paper_ids.json"
+ANNOY_INDEX_PATH = "spctr.ann"
+EMBEDDINGS_PATH = "spctr_embeddings.npy"
+PAPER_ID_LOOKUP_PATH = "spctr_paper_ids.json"
 BATCH_SIZE = 4
+
+tsv_path = "dhq-recs-zfill-spctr.tsv"
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
 def load_embeddings_and_index():
     """
     Load existing embeddings and AnnoyIndex from disk.
     """
-    if os.path.exists(EMBEDDINGS_PATH) and os.path.exists(
-            ANNOY_INDEX_PATH) and os.path.exists(PAPER_ID_LOOKUP_PATH):
+    if (
+        os.path.exists(EMBEDDINGS_PATH)
+        and os.path.exists(ANNOY_INDEX_PATH)
+        and os.path.exists(PAPER_ID_LOOKUP_PATH)
+    ):
         embeddings = np.load(EMBEDDINGS_PATH)
-        ann_index = AnnoyIndex(D_MODEL, 'angular')
+        ann_index = AnnoyIndex(D_MODEL, "angular")
         ann_index.load(ANNOY_INDEX_PATH)
-        with open(PAPER_ID_LOOKUP_PATH, 'r') as f:
+        with open(PAPER_ID_LOOKUP_PATH, "r") as f:
             paper_id_lookup = json.load(f)
     else:
         embeddings = np.empty((0, D_MODEL))
-        ann_index = AnnoyIndex(D_MODEL, 'angular')
+        ann_index = AnnoyIndex(D_MODEL, "angular")
         paper_id_lookup = {}
 
     return embeddings, ann_index, paper_id_lookup
@@ -60,16 +65,21 @@ def save_embeddings_and_index(embeddings, ann_index, paper_id_lookup):
     """
     np.save(EMBEDDINGS_PATH, embeddings)
     ann_index.save(ANNOY_INDEX_PATH)
-    with open(PAPER_ID_LOOKUP_PATH, 'w') as f:
+    with open(PAPER_ID_LOOKUP_PATH, "w") as f:
         json.dump(paper_id_lookup, f)
 
 
-def generate_specter_embeddings(texts: List[str]) -> np.ndarray:
+def generate_specter_embeddings(
+    texts: List[str], tokenizer, model, device
+) -> np.ndarray:
     """
     Generate SPECTER embeddings for a list of texts.
 
     Args:
-        texts: List of title and abstract seperated with a sep_token.
+        texts: List of title and abstract separated with a sep_token.
+        tokenizer: The tokenizer instance to use for SPECTER.
+        model: The model instance to use for SPECTER.
+        device: The device to run the model on (CPU or GPU).
 
     Returns:
         A numpy array of embeddings.
@@ -77,17 +87,21 @@ def generate_specter_embeddings(texts: List[str]) -> np.ndarray:
 
     def chunk(file_list, n_chunks):
         chunk_size = math.ceil(float(len(file_list)) / n_chunks)
-        return [file_list[i * chunk_size:(i + 1) * chunk_size] for i in
-                range(n_chunks - 1)] + [file_list[(n_chunks - 1) * chunk_size:]]
+        return [
+            file_list[i * chunk_size : (i + 1) * chunk_size]
+            for i in range(n_chunks - 1)
+        ] + [file_list[(n_chunks - 1) * chunk_size :]]
 
-    batches = chunk(texts, math.ceil(len(texts) / 4))
+    batches = chunk(texts, math.ceil(len(texts) / BATCH_SIZE))
 
     embeddings_batches = []
     for batch in tqdm(batches):
-        inputs = tokenizer(batch, padding=True, truncation=True, return_tensors="pt",
-                           max_length=300)
-        result = model(**inputs)
-        embeddings_batches.append(result.last_hidden_state[:, 0, :])
+        inputs = tokenizer(
+            batch, padding=True, truncation=True, return_tensors="pt", max_length=300
+        ).to(device)
+        with torch.no_grad():
+            result = model(**inputs)
+        embeddings_batches.append(result.last_hidden_state[:, 0, :].cpu())
 
     embeddings = torch.cat(embeddings_batches, 0)
     return embeddings.detach().numpy()
@@ -119,8 +133,11 @@ def find_top_similar_papers(ann_index, embeddings, metadata, top_n=10):
         # find top N similar papers (excluding self)
         similar_papers = ann_index.get_nns_by_vector(embeddings[i], top_n + 1)[1:]
         recommend.update(
-            {f"Recommendation {j + 1}": metadata[idx]["paper_id"] for j, idx in
-             enumerate(similar_papers)})
+            {
+                f"Recommendation {j + 1}": metadata[idx]["paper_id"]
+                for j, idx in enumerate(similar_papers)
+            }
+        )
         recommend["url"] = m["url"]
         recommends.append(recommend)
 
@@ -129,7 +146,9 @@ def find_top_similar_papers(ann_index, embeddings, metadata, top_n=10):
 
 if __name__ == "__main__":
     print("*" * 80)
-    print("Generating paper recommendations based on SPECTER2 (base)...")
+    print(
+        f"Generating paper recommendations based on SPECTER2 (base) using {device}..."
+    )
 
     # get all xml files
     xml_folders = extract_article_folders("dhq-journal/articles")
@@ -169,18 +188,22 @@ if __name__ == "__main__":
 
     if new_papers:
         # initialize SPECTER model and tokenizer only if there are new papers
-        tokenizer = AutoTokenizer.from_pretrained('allenai/specter2_base')
-        model = AutoModel.from_pretrained('allenai/specter2_base')
+        tokenizer = AutoTokenizer.from_pretrained("allenai/specter2_base")
+        model = AutoModel.from_pretrained("allenai/specter2_base").to(device)
 
         # combine title and abstract separated with a sep_token for SPECTER input
         new_title_abstracts = [
-            m.get('title', '') + tokenizer.sep_token + m.get('abstract', '') for m in
-            new_papers]
+            m.get("title", "") + tokenizer.sep_token + m.get("abstract", "")
+            for m in new_papers
+        ]
 
         # generate embeddings for new papers
-        new_embeddings = generate_specter_embeddings(new_title_abstracts)
-        new_paper_id_lookup = {m["paper_id"]: i + len(paper_id_lookup) for i, m in
-                               enumerate(new_papers)}
+        new_embeddings = generate_specter_embeddings(
+            new_title_abstracts, tokenizer, model, device
+        )
+        new_paper_id_lookup = {
+            m["paper_id"]: i + len(paper_id_lookup) for i, m in enumerate(new_papers)
+        }
 
         # update embeddings and index
         embeddings = np.vstack((embeddings, new_embeddings))
@@ -198,7 +221,6 @@ if __name__ == "__main__":
     header = list(recommends[0].keys())
     header.append(header.pop(header.index("url")))
 
-    tsv_path = "dhq-recommendations-specter2.tsv"
     with open(tsv_path, "w", newline="", encoding="utf-8") as file:
         writer = csv.DictWriter(file, fieldnames=header, delimiter="\t")
         writer.writeheader()
@@ -206,8 +228,8 @@ if __name__ == "__main__":
             writer.writerow(row)
 
     print(
-        f"Each paper's top 10 similar papers, along with additional metadata, have been"
-        f"successfully saved to {tsv_path}. {len(recommends)} papers are in the "
-        f"BM25-based recommendation using title, abstract, and body text.")
+        f"Each paper's top 10 similar papers, along with additional metadata, have "
+        f"been successfully saved to {tsv_path}. {len(recommends)} papers are in the "
+        f"recommendation list."
+    )
     print("*" * 80)
-

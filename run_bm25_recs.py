@@ -21,6 +21,8 @@ from utils import (
     get_articles_in_editorial_process,
 )
 
+tsv_path = "dhq-recs-zfill-bm25.tsv"
+
 
 def compute_bm25_scores(
     documents: List[str], queries: List[str], k1: float = 1.5, b: float = 0.75
@@ -155,7 +157,6 @@ if __name__ == "__main__":
     # move 'url' to the end to follow naming conventions is a previous repo
     header.append(header.pop(header.index("url")))
 
-    tsv_path = "dhq-recs-zfill-full-text.tsv"
     with open(tsv_path, "w", newline="", encoding="utf-8") as file:
         writer = csv.DictWriter(file, fieldnames=header, delimiter="\t")
         writer.writeheader()

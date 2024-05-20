@@ -21,6 +21,7 @@ from utils import (
     get_articles_in_editorial_process,
 )
 
+tsv_path = "dhq-recs-zfill-kwd.tsv"
 
 def construct_binary_matrix(metadata: List[Dict]) -> Tuple:
     """
@@ -220,7 +221,6 @@ if __name__ == "__main__":
     # move 'url' to the end to follow naming conventions is a previous repo
     header.append(header.pop(header.index("url")))
 
-    tsv_path = "dhq-recs-zfill-keyword.tsv"
     with open(tsv_path, "w", newline="", encoding="utf-8") as file:
         writer = csv.DictWriter(file, fieldnames=header, delimiter="\t")
         writer.writeheader()
