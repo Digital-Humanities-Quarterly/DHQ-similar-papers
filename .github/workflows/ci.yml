@@ -27,7 +27,7 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements.txt
+          python -m pip install -r requirements.txt
 
       # step 4: check for submodule updates
       - name: Check for submodule updates
@@ -43,11 +43,15 @@ jobs:
       # step 5: rerun the computations if submodule is updated
       - name: Run keyword-based recommendation system
         if: steps.submodule_check.outputs.submodule_updated == 'true'
-        run: python run_keyword_based_recommendation.py
+        run: python run_kwd_recs.py
 
       - name: Run BM25 recommendation system
         if: steps.submodule_check.outputs.submodule_updated == 'true'
-        run: python run_full_text_bm25_recommendation.py
+        run: python run_bm25_recs.py
+
+      - name: Run SPECTER recommendation system
+        if: steps.submodule_check.outputs.submodule_updated == 'true'
+        run: python run_spctr_recs.py
 
       # step 6: commit and push changes if there are any
       - name: Commit and push changes
