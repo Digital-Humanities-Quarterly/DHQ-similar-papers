@@ -5,7 +5,7 @@ paper recommendation.
 
 __author__ = "The Digital Humanities Quarterly Data Analytics Team"
 __license__ = "MIT"
-__version__ = "0.0.2"
+__version__ = "0.0.3"
 
 import os
 import re
@@ -112,7 +112,9 @@ def extract_relevant_elements(xml_folder: str) -> Dict[str, Optional[str]]:
     if publication_date:
         publication_year = publication_date["when"][:4]
     else:
-        raise RuntimeError(f'{paper_id} does not have publication year in xml.')
+        # fixme: silence this for now
+        # print(f'{paper_id} does not have publication year in xml.')
+        publication_year = ''
 
     volume = (
         soup.find("idno", {"type": "volume"}).text
