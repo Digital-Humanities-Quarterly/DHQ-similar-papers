@@ -14,9 +14,17 @@ Recommendations are generated using the hidden states from [SPECTER2](https://hu
 the paper's title and abstract.
 
 ## Use
-To get a set of the most updated recommendations when changes have been introduced to the DHQ-journal repository, please run 
-**[GitHub Actions](https://github.com/Wang-Haining/DHQ-similar-papers/actions)** to get the corresponding recommendations.
+To get a set of the most updated recommendations when changes have been introduced to the DHQ-journal repository, please 
+click `Run workflow` at 
+**[GitHub Actions](https://github.com/Wang-Haining/DHQ-similar-papers/actions/workflows/ci.yml)** to get the 
+corresponding recommendations.
 It will also automatically run every Sunday at midnight.
+
+The ten most similar article IDs for each of the systems are documented in
+- [`dhq-recs-zfill-kwd.tsv`](https://github.com/Wang-Haining/DHQ-similar-papers/blob/main/dhq-recs-zfill-kwd.tsv)
+- [`dhq-recs-zfill-bm25.tsv`](https://github.com/Wang-Haining/DHQ-similar-papers/blob/main/dhq-recs-zfill-bm25.tsv), and
+- [`dhq-recs-zfill-spctr.tsv`](https://github.com/Wang-Haining/DHQ-similar-papers/blob/main/dhq-recs-zfill-spctr.tsv).
+
 
 ## Workflow
 Manual or automatic recommendation works as follows:
@@ -32,7 +40,8 @@ as well. Papers in the editorial process are not considered.
 
 ## Reproduction
 
-To reproduce the setup and run the scripts, use the following commands:
+To reproduce the recommendations on your own machine (not recommended for production), please use the following 
+commands:
 
 ```bash
 # clone the repository and navigate into the directory
@@ -58,14 +67,6 @@ python -m run_bm25_recs
 # execute the SPECTER2 recommendation
 python -m run_spctr_recs
 ```
-
-The ten most similar article IDs for each of the systems are documented in
-- [`dhq-recs-zfill-kwd.tsv`](https://github.com/Wang-Haining/DHQ-similar-papers/blob/main/dhq-recs-zfill-kwd.tsv)
-- [`dhq-recs-zfill-bm25.tsv`](https://github.com/Wang-Haining/DHQ-similar-papers/blob/main/dhq-recs-zfill-bm25.tsv), and
-- [`dhq-recs-zfill-spctr.tsv`](https://github.com/Wang-Haining/DHQ-similar-papers/blob/main/dhq-recs-zfill-spctr.tsv).
-
-Each time the DHQ repository is updated, the recommendation scripts are expected to run again to ensure the most 
-up-to-date recommendations.
 
 
 ## To-Do List:
