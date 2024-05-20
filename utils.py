@@ -85,9 +85,9 @@ def remove_excessive_space(t: str) -> str:
 
 def extract_relevant_elements(xml_folder: str) -> Dict[str, Optional[str]]:
     """
-    Extract relevant elements from a DHQ article XML file, including paper_id,
-    publication_year, volume_and_issue, authors (pipe concatenated if multiple),
-    affiliations (pipe concatenated if multiple), title, abstract, url, and
+    Extract relevant elements from a DHQ article XML file, including paper_id,authors
+    (pipe concatenated if multiple), affiliations (pipe concatenated if multiple),
+    title, abstract, url (heuristically construed with volume/issue/id), and
     dhq_keywords.
 
     Args:
@@ -107,14 +107,11 @@ def extract_relevant_elements(xml_folder: str) -> Dict[str, Optional[str]]:
     # extract title
     title = remove_excessive_space(soup.find("title").text)
 
-    # extract publication year, volume, and issue
-    publication_date = soup.find("date", {"when": True})
-    publication_year = publication_date["when"][:4] if publication_date else None
-
+    # heuristically construct url
     volume = (
         soup.find("idno", {"type": "volume"}).text
         if soup.find("idno", {"type": "volume"})
-        else None
+        else ''
     )
     # trim leading 0s
     volume = volume.lstrip("0")
@@ -123,7 +120,10 @@ def extract_relevant_elements(xml_folder: str) -> Dict[str, Optional[str]]:
         if soup.find("idno", {"type": "issue"})
         else None
     )
-    volume_and_issue = f"{volume}.{issue}" if volume and issue else None
+    url = (
+        f"https://digitalhumanities.org/dhq/vol/"
+        f"{volume}/{issue}/{paper_id}/{paper_id}.html"
+    )
 
     # extract authors and affiliations
     authors_tag = []
@@ -167,17 +167,9 @@ def extract_relevant_elements(xml_folder: str) -> Dict[str, Optional[str]]:
         # iterate through all elements, recursively extracting text including headings
         body_text = extract_text_recursive(body)
 
-    # heuristically construct url
-    url = (
-        f"https://digitalhumanities.org/dhq/vol/"
-        f"{volume}/{issue}/{paper_id}/{paper_id}.html"
-    )
-
     return {
         "paper_id": paper_id,
         "title": title.strip(),
-        "publication_year": publication_year.strip(),
-        "volume_and_issue": volume_and_issue.strip(),
         "authors": authors.strip(),
         "affiliations": affiliations.strip(),
         "abstract": abstract.strip(),
