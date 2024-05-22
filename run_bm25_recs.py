@@ -5,7 +5,7 @@ This module contains scripts to find the most similar papers based on the full t
 
 __author__ = "The Digital Humanities Quarterly Data Analytics Team"
 __license__ = "MIT"
-__version__ = "0.0.3"
+__version__ = "0.0.4"
 
 import csv
 import os
@@ -15,12 +15,9 @@ import numpy as np
 import scipy.sparse as sp
 from sklearn.feature_extraction.text import TfidfVectorizer
 
-from utils import (
-    extract_article_folders,
-    extract_relevant_elements,
-    get_articles_in_editorial_process,
-    check_metadata
-)
+from utils import (check_metadata, extract_article_folders,
+                   extract_relevant_elements,
+                   get_articles_in_editorial_process)
 
 tsv_path = "dhq-recs-zfill-bm25.tsv"
 
@@ -109,7 +106,7 @@ if __name__ == "__main__":
         if os.path.exists(paper_path):
             metadata.append(extract_relevant_elements(xml_folder))
 
-    # filter out paper ill-annotated
+    # filter out papers ill-annotated
     indices, recommends = check_metadata(metadata)
 
     # combine title, abstract, and body text for BM25 input
