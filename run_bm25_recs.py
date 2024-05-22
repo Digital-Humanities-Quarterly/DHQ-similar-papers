@@ -19,6 +19,7 @@ from utils import (
     extract_article_folders,
     extract_relevant_elements,
     get_articles_in_editorial_process,
+    check_metadata
 )
 
 tsv_path = "dhq-recs-zfill-bm25.tsv"
@@ -94,7 +95,6 @@ if __name__ == "__main__":
     print("Generating paper recommendations based on the full text using BM25...")
     # get all xml files
     xml_folders = extract_article_folders("dhq-journal/articles")
-
     # remove articles in editorial process (should not be considered in recommendation)
     xml_to_remove = [
         os.path.join("dhq-journal/articles", f)
@@ -109,52 +109,31 @@ if __name__ == "__main__":
         if os.path.exists(paper_path):
             metadata.append(extract_relevant_elements(xml_folder))
 
+    # filter out paper ill-annotated
+    indices, recommends = check_metadata(metadata)
+
     # combine title, abstract, and body text for BM25 input
     documents = [
         f"{m.get('title', '')} {m.get('abstract', '')} {m.get('body_text', '')}"
-        for m in metadata
+        for i, m in enumerate(metadata) if i in indices
     ]
     # computing similarity in a doc * doc matrix
     scores = compute_bm25_scores(documents, documents)
 
-    recommends = []
-    for index, m in enumerate(metadata):
-        # pick up the naming used in an early repo
-        recommend = {
-            "Article ID": m["paper_id"],
-            "Pub. Year": m["publication_year"],
-            "Authors": m["authors"],
-            "Affiliations": m["affiliations"],
-            "Title": m["title"],
-        }
-        # check for 0-length text and print the corresponding key
-        has_zero_length_value = False
-        for key, value in recommend.items():
-            if value == "":
-                print(
-                    f"{m['paper_id']}'s {key} is missing."
-                    f" Will not be included in the recommendations."
-                )
-                has_zero_length_value = True
-        # exclude the document itself
+    # add recommendations
+    for index, recommend in enumerate(recommends):
         top_indices = np.argsort(scores.toarray()[index, :])[::-1][1:11]
         recommend.update(
             {
-                f"Recommendation {i + 1}": metadata[idx]["paper_id"]
-                for i, idx in enumerate(top_indices)
+                f"Recommendation {idx + 1}": recommends[t_i]["Article ID"]
+                for idx, t_i in enumerate(top_indices)
             }
         )
-        # add the URL at the end
-        recommend["url"] = m["url"]
-        # skip those with missing fields
-        if not has_zero_length_value:
-            recommends.append(recommend)
-    # sort list based on 'Article ID'
-    recommends = sorted(recommends, key=lambda x: x["Article ID"])
 
-    # output
+    # sort and save
+    recommends = sorted(recommends, key=lambda x: x["Article ID"])
     header = list(recommends[0].keys())
-    # move 'url' to the end to follow naming conventions is a previous repo
+    # move 'url' to the end to follow naming conventions
     header.append(header.pop(header.index("url")))
 
     with open(tsv_path, "w", newline="", encoding="utf-8") as file:
