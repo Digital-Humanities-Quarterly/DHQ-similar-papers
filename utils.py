@@ -9,11 +9,9 @@ __version__ = "0.0.3"
 
 import os
 import re
-from bs4 import Tag
-from typing import Union
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Tuple, Union
 
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup, Tag
 
 
 def get_articles_in_editorial_process(
@@ -209,3 +207,43 @@ def extract_text_recursive(element: Union[Tag, BeautifulSoup]) -> str:
         else:
             text += extract_text_recursive(child)
     return remove_excessive_space(text)
+
+
+def check_metadata(metadata: list) -> Tuple[list, list]:
+    """
+    Check metadata for any fields with zero length and filter out such entries.
+
+    Args:
+        metadata: A list of dictionaries containing metadata for articles.
+
+    Returns:
+        A tuple containing two lists:
+        - The first list contains the indices of valid metadata entries.
+        - The second list contains the valid metadata entries with non-zero length
+            fields.
+    """
+    indices = []
+    recommends = []
+    for index, m in enumerate(metadata):
+        # pick up the tsv naming convention
+        recommend = {
+            "Article ID": m["paper_id"],
+            "Pub. Year": m["publication_year"],
+            "Authors": m["authors"],
+            "Affiliations": m["affiliations"],
+            "Title": m["title"],
+            "url": m["url"],
+        }
+        # check for 0-length text and print the corresponding key
+        has_zero_length_value = False
+        for key, value in recommend.items():
+            if value == "":
+                print(
+                    f"{m['paper_id']}'s {key} is missing."
+                    f" Will not be included in the recommendations."
+                )
+                has_zero_length_value = True
+        if not has_zero_length_value:
+            indices.append(index)
+            recommends.append(recommend)
+    return indices, recommends
