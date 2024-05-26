@@ -238,11 +238,21 @@ def check_metadata(metadata: list) -> Tuple[list, list]:
         has_zero_length_value = False
         for key, value in recommend.items():
             if value == "":
-                print(
-                    f"{m['paper_id']}'s {key} is missing."
-                    f" Will not be included in the recommendations."
-                )
-                has_zero_length_value = True
+                # don't filter out articles written by a corporate author using their
+                # affiliation name as the author name and reasonably leave the
+                # affiliation field blank
+                if key == "Authors" and recommend["Affiliations"]:
+                    print(
+                        f"{m['paper_id']} seems to be a corporate author because its "
+                        f"{key} is missing but {recommend['Affiliations']=} is not."
+                        f"Will be included in the recommendations."
+                    )
+                else:
+                    print(
+                        f"{m['paper_id']}'s {key} is missing."
+                        f"Will not be included in the recommendations."
+                    )
+                    has_zero_length_value = True
         if not has_zero_length_value:
             indices.append(index)
             recommends.append(recommend)
