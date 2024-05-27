@@ -241,7 +241,7 @@ def check_metadata(metadata: list) -> Tuple[list, list]:
                 # don't filter out articles written by a corporate author using their
                 # affiliation name as the author name and reasonably leave the
                 # affiliation field blank
-                if key == "Authors" and recommend["Affiliations"]:
+                if key == "Affiliations" and recommend["Authors"]:
                     print(
                         f"{m['paper_id']} seems to be a corporate author because its "
                         f"{key} is missing but {recommend['Affiliations']=} is not."
