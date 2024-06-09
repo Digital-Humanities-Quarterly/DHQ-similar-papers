@@ -10,7 +10,7 @@ The implementation is heavily inspired by:
 
 __author__ = "The Digital Humanities Quarterly Data Analytics Team"
 __license__ = "MIT"
-__version__ = "0.0.3"
+__version__ = "0.0.4"
 
 import csv
 import json
@@ -20,9 +20,10 @@ from typing import List
 
 import numpy as np
 import torch
+from adapters import AutoAdapterModel
 from annoy import AnnoyIndex
 from tqdm import tqdm
-from transformers import AutoModel, AutoTokenizer
+from transformers import AutoTokenizer
 
 from utils import (extract_article_folders, extract_relevant_elements,
                    get_articles_in_editorial_process)
@@ -189,7 +190,10 @@ if __name__ == "__main__":
     if new_papers:
         # initialize SPECTER model and tokenizer only if there are new papers
         tokenizer = AutoTokenizer.from_pretrained("allenai/specter2_base")
-        model = AutoModel.from_pretrained("allenai/specter2_base").to(device)
+        model = AutoAdapterModel.from_pretrained("allenai/specter2_base")
+        model.load_adapter("allenai/specter2", source="hf", load_as="specter2",
+                           set_active=True)
+        model.to(device)
 
         # combine title and abstract separated with a sep_token for SPECTER input
         new_title_abstracts = [
