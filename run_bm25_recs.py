@@ -17,7 +17,8 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 
 from utils import (check_metadata, extract_article_folders,
                    extract_relevant_elements,
-                   get_articles_in_editorial_process)
+                   get_articles_in_editorial_process,
+                   NO_RECOMMEDATIONS)
 
 tsv_path = "dhq-recs-zfill-bm25.tsv"
 
@@ -97,6 +98,7 @@ if __name__ == "__main__":
         os.path.join("dhq-journal/articles", f)
         for f in get_articles_in_editorial_process()
     ]
+    xml_to_remove.extend(NO_RECOMMEDATIONS)
     xml_folders = [f for f in xml_folders if f not in xml_to_remove]
 
     metadata = []

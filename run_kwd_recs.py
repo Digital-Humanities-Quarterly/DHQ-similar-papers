@@ -5,7 +5,7 @@ Scheme assignments (i.e., DHQ keyword).
 
 __author__ = "The Digital Humanities Quarterly Data Analytics Team"
 __license__ = "MIT"
-__version__ = "0.0.3"
+__version__ = "0.0.4"
 
 import csv
 import os
@@ -19,6 +19,7 @@ from utils import (
     extract_article_folders,
     extract_relevant_elements,
     get_articles_in_editorial_process,
+    NO_RECOMMEDATIONS
 )
 
 tsv_path = "dhq-recs-zfill-kwd.tsv"
@@ -162,6 +163,7 @@ if __name__ == "__main__":
         os.path.join("dhq-journal/articles", f)
         for f in get_articles_in_editorial_process()
     ]
+    xml_to_remove.extend(NO_RECOMMEDATIONS)
     xml_folders = [f for f in xml_folders if f not in xml_to_remove]
 
     metadata = []

@@ -25,7 +25,8 @@ from tqdm import tqdm
 from transformers import AutoTokenizer
 
 from utils import (extract_article_folders, extract_relevant_elements,
-                   get_articles_in_editorial_process)
+                   get_articles_in_editorial_process,
+                   NO_RECOMMEDATIONS)
 
 MODEL = 'allenai/specter2_base'
 BATCH_SIZE = 4
@@ -126,6 +127,7 @@ if __name__ == "__main__":
         os.path.join("dhq-journal/articles", f)
         for f in get_articles_in_editorial_process()
     ]
+    xml_to_remove.extend(NO_RECOMMEDATIONS)
     xml_folders = [f for f in xml_folders if f not in xml_to_remove]
 
     metadata = []

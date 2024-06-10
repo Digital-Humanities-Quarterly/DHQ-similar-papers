@@ -5,7 +5,7 @@ paper recommendation.
 
 __author__ = "The Digital Humanities Quarterly Data Analytics Team"
 __license__ = "MIT"
-__version__ = "0.0.3"
+__version__ = "0.0.4"
 
 import os
 import re
@@ -13,6 +13,8 @@ from typing import Dict, List, Optional, Tuple, Union
 
 from bs4 import BeautifulSoup, Tag
 
+# some papers should not have recommendations, e.g., remembrance pieces
+NO_RECOMMEDATIONS = ['dhq-journal/articles/000493']
 
 def get_articles_in_editorial_process(
     toc_xml: str = "dhq-journal/toc/toc.xml",
