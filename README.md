@@ -70,8 +70,8 @@ python -m run_spctr_recs
 
 
 ## To-Do List:
-1. Write unit tests.
-2. Perhaps unify runs into one file.
+1. Write more unit tests.
+Fix title extract (e.g., quotes in titles 000664).
 
 ## License
 MIT
@@ -95,3 +95,8 @@ Please open an issue for any suggestions, thank you!
   - Added CI pipeline with Actions.
   - Improved module/var naming.
   - Updated data files.
+- v0.0.4
+  - Ignored remembrance pieces in recommendations.
+  - Added unit tests.
+  - Dumped `annoy` for spctr method.
+  - Added a rule to Actions to run tests before commit.
