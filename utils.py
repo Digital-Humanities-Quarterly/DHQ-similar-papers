@@ -5,16 +5,23 @@ paper recommendation.
 
 __author__ = "The Digital Humanities Quarterly Data Analytics Team"
 __license__ = "MIT"
-__version__ = "0.0.4"
+__version__ = "0.0.5"
 
+import csv
 import os
 import re
 from typing import Dict, List, Optional, Tuple, Union
 
-from bs4 import BeautifulSoup, Tag
+from bs4 import BeautifulSoup, NavigableString, Tag
 
 # some papers should not have recommendations, e.g., remembrance pieces
-NO_RECOMMEDATIONS = ['dhq-journal/articles/000493']
+INGORE_ARTICLES = ["dhq-journal/articles/000493"]
+
+# tsv files
+BM25_TSV_PATH = "dhq-recs-zfill-bm25.tsv"
+KWD_TSV_PATH = "dhq-recs-zfill-kwd.tsv"
+SPCTR_TSV_PATH = "dhq-recs-zfill-spctr.tsv"
+
 
 def get_articles_in_editorial_process(
     toc_xml: str = "dhq-journal/toc/toc.xml",
@@ -105,21 +112,49 @@ def extract_relevant_elements(xml_folder: str) -> Dict[str, Optional[str]]:
         soup = BeautifulSoup(xml, "xml")
 
     # extract title
-    title = remove_excessive_space(soup.find("title").text)
+    title_tag = soup.find("title")
+    if title_tag:
+        quotes_title_tag = title_tag.find("title", {"rend": "quotes"})
+        if quotes_title_tag:
+            # extract text before the quoted title
+            before_quotes = "".join(
+                str(content)
+                for content in title_tag.contents
+                if isinstance(content, NavigableString)
+            )
+            before_quotes = before_quotes.split(str(quotes_title_tag))[0].strip()
+            before_quotes = remove_excessive_space(before_quotes)
+
+            # extract the quoted title
+            quotes = f' "{remove_excessive_space(quotes_title_tag.text)}"'
+
+            # extract text after the quoted title
+            after_quotes = "".join(
+                str(content)
+                for content in title_tag.contents
+                if isinstance(content, NavigableString)
+                and content not in quotes_title_tag.contents
+            )
+            after_quotes = after_quotes.split(str(quotes_title_tag))[-1].strip()
+            after_quotes = remove_excessive_space(after_quotes)
+
+            title = before_quotes + quotes + " " + after_quotes
+        else:
+            title = remove_excessive_space(title_tag.text)
+    else:
+        title = ""
 
     # extract publication year, volume, and issue
     publication_date = soup.find("date", {"when": True})
     if publication_date:
         publication_year = publication_date["when"][:4]
     else:
-        # fixme: silence this for now
-        # print(f'{paper_id} does not have publication year in xml.')
-        publication_year = ''
+        publication_year = ""
 
     volume = (
         soup.find("idno", {"type": "volume"}).text
         if soup.find("idno", {"type": "volume"})
-        else ''
+        else ""
     )
     # trim leading 0s
     volume = volume.lstrip("0")
@@ -204,31 +239,32 @@ def extract_text_recursive(element: Union[Tag, BeautifulSoup]) -> str:
     """
     text = ""
     for child in element.children:
-        if getattr(child, 'name', None) is None:
+        if getattr(child, "name", None) is None:
             text += child.string.strip() + " "
         else:
             text += extract_text_recursive(child)
     return remove_excessive_space(text)
 
 
-def check_metadata(metadata: list) -> Tuple[list, list]:
+def validate_metadata(metadata: list) -> Tuple[list, list]:
     """
-    Check metadata for any fields with zero length and filter out such entries.
+    Validate metadata for any fields with zero length and filter out such entries.
 
     Args:
         metadata: A list of dictionaries containing metadata for articles.
 
     Returns:
         A tuple containing two lists:
-        - The first list contains the indices of valid metadata entries.
+        - The first list contains the valid metadata entries (useful for subsequent
+            computation).
         - The second list contains the valid metadata entries with non-zero length
-            fields.
+            fields (which prefills fields in the final tsv table).
     """
     indices = []
-    recommends = []
+    recs = []
     for index, m in enumerate(metadata):
         # pick up the tsv naming convention
-        recommend = {
+        rec = {
             "Article ID": m["paper_id"],
             "Pub. Year": m["publication_year"],
             "Authors": m["authors"],
@@ -238,15 +274,15 @@ def check_metadata(metadata: list) -> Tuple[list, list]:
         }
         # check for 0-length text and print the corresponding key
         has_zero_length_value = False
-        for key, value in recommend.items():
+        for key, value in rec.items():
             if value == "":
                 # don't filter out articles written by a corporate author using their
                 # affiliation name as the author name and reasonably leave the
                 # affiliation field blank
-                if key == "Affiliations" and recommend["Authors"]:
+                if key == "Affiliations" and rec["Authors"]:
                     print(
                         f"{m['paper_id']} seems to be a corporate author because its "
-                        f"{key} is missing but {recommend['Affiliations']=} is not."
+                        f"{key} is missing but {rec['Affiliations']=} isn't. "
                         f"Will be included in the recommendations."
                     )
                 else:
@@ -257,5 +293,61 @@ def check_metadata(metadata: list) -> Tuple[list, list]:
                     has_zero_length_value = True
         if not has_zero_length_value:
             indices.append(index)
-            recommends.append(recommend)
-    return indices, recommends
+            recs.append(rec)
+    valid_metadata = [m for i, m in enumerate(metadata) if i in indices]
+    return valid_metadata, recs
+
+
+def get_metadata() -> List[Dict]:
+    """
+    Get metadata from raw xml files.
+    Notice, we will filter out articles:
+        - in editorial process and
+        - otherwise specified.
+    Returns:
+        Metadata for each article.
+    """
+    # get all xml files
+    xml_folders = extract_article_folders("dhq-journal/articles")
+    # ignore articles in editorial process (should not be considered in recommendation)
+    xml_to_ignore = [
+        os.path.join("dhq-journal/articles", f)
+        for f in get_articles_in_editorial_process()
+    ]
+    # ignore papers otherwise specified
+    xml_to_ignore.extend(INGORE_ARTICLES)
+    xml_folders = [f for f in xml_folders if f not in xml_to_ignore]
+
+    metadata = []
+    for xml_folder in xml_folders:
+        paper_id = xml_folder.split("/").pop()
+        paper_path = os.path.join(xml_folder, f"{paper_id}.xml")
+        if os.path.exists(paper_path):
+            metadata.append(extract_relevant_elements(xml_folder))
+    return metadata
+
+
+def sort_then_save(recs: List[Dict[str, str]], tsv_path: str) -> None:
+    """
+    Sorts a list of article recommendations by 'Article ID' and saves them to a TSV
+    file.
+
+    Args:
+        recs: A list of dictionaries, each representing fields useful in downstream
+            article recommendation system.
+        tsv_path: The file path where the sorted recommendations TSV will be saved.
+
+    Returns:
+        None
+    """
+    # sort and save
+    recs = sorted(recs, key=lambda x: x["Article ID"])
+    header = list(recs[0].keys())
+    # move 'url' to the end to follow naming conventions
+    header.append(header.pop(header.index("url")))
+
+    with open(tsv_path, "w", newline="", encoding="utf-8") as file:
+        writer = csv.DictWriter(file, fieldnames=header, delimiter="\t")
+        writer.writeheader()
+        for row in recs:
+            writer.writerow(row)
