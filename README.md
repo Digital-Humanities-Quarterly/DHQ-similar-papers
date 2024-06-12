@@ -79,6 +79,7 @@ Please open an issue for any suggestions, thank you!
 
 <details>
   <summary>Click to expand</summary>
+
 ## History
 - v0.0.1: 
   - Implemented the keyword-based recommendation system.
