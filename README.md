@@ -77,10 +77,11 @@ The Digital Humanities Quarterly Data Analytics Team
 ## Contribution
 Please open an issue for any suggestions, thank you!
 
+
+## History
 <details>
   <summary>Click to expand</summary>
 
-## History
 - v0.0.1: 
   - Implemented the keyword-based recommendation system.
 - v0.0.2:
