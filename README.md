@@ -33,10 +33,8 @@ Manual or automatic recommendation works as follows:
 2. Extract relevant elements from DHQ papers in TEI format, with the keyword-based recommendation system primarily 
 focusing on `dhq_keywords`, and the full text-based recommendation system extracting the title, abstract, and body text 
 as well. Papers in the editorial process are not considered.
-3. Construct a similarity matrix for generating recommendations (refer to `run_kwd_recs.py` and 
-`run_bm25_recs.py` for more details). For SPECTER recommendations, we index the embeddings with 
-[`annoy`](https://github.com/spotify/annoy) for fast search. New article embeddings will be added to the index incrementally for efficiency.
-4. Retrieve the most similar papers from the similarity matrix, utilizing a random seed to handle ties in rankings.
+3. Construct a similarity matrix for generating recommendations.
+4. Retrieve the most similar papers from the similarity matrix, utilizing a random seed to handle ties.
 
 ## Reproduction
 <details>
