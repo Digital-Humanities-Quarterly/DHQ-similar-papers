@@ -9,13 +9,12 @@ The implementation is heavily inspired by:
 
 __author__ = "The Digital Humanities Quarterly Data Analytics Team"
 __license__ = "MIT"
-__version__ = "0.0.4"
+__version__ = "0.0.5"
 
-import csv
+
 import math
-import os
 from time import time
-from typing import List
+from typing import Dict, List
 
 import numpy as np
 import torch
@@ -24,13 +23,11 @@ from scipy.spatial.distance import pdist, squareform
 from tqdm import tqdm
 from transformers import AutoTokenizer
 
-from utils import (extract_article_folders, extract_relevant_elements,
-                   get_articles_in_editorial_process,
-                   NO_RECOMMEDATIONS)
+from utils import (SPCTR_TSV_PATH, get_metadata, sort_then_save,
+                   validate_metadata)
 
-MODEL = 'allenai/specter2_base'
+MODEL = "allenai/specter2_base"
 BATCH_SIZE = 4
-tsv_path = "dhq-recs-zfill-spctr.tsv"
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
@@ -69,13 +66,15 @@ def generate_embeddings(texts: List[str], tokenizer, model) -> np.ndarray:
     return embeddings.detach().numpy()
 
 
-def find_most_similar_papers(metadata, vecs, top_n=10):
+def find_most_similar_papers(
+    recs: List[Dict], vecs: np.ndarray, top_n: int = 10
+) -> List[Dict]:
     """
-    Find the top N most similar papers for each paper using AnnoyIndex.
+    Find the top N most similar papers for each paper using cosine similarity.
 
     Args:
-        metadata: List of dictionaries containing paper metadata.
-        vecs: List of vectors in the same order of as metadata (sorted by paper_id).
+        recs: List of dictionaries containing paper recommendations with prefilled fields.
+        vecs: List of vectors in the same order as recs (sorted by paper_id).
         top_n: Number of top similar papers to find.
 
     Returns:
@@ -84,78 +83,32 @@ def find_most_similar_papers(metadata, vecs, top_n=10):
     pairwise_cos_dists = pdist(vecs, "cosine")
     cos_sim = 1 - squareform(pairwise_cos_dists)
 
-    def find_most_similar(index, similarity_matrix, top_n=top_n):
-        similar_indices = np.argsort(similarity_matrix[index])[-top_n - 1:-1][
-                          ::-1]  # exclude the first one as it is the abstract itself
-        return similar_indices
+    for i, rec in enumerate(recs):
+        similarity_scores = cos_sim[i]
+        similarity_scores[i] = -np.inf  # ignore self-similarity
 
-    recommends = []
-    for i, m in enumerate(metadata):
-        recommend = {
-            "Article ID": m["paper_id"],
-            "Pub. Year": m["publication_year"],
-            "Authors": m["authors"],
-            "Affiliations": m["affiliations"],
-            "Title": m["title"],
-        }
+        sorted_indices = np.argsort(-similarity_scores)[:top_n]
+        similar_papers = [recs[idx]["Article ID"] for idx in sorted_indices]
 
-        # find top 10 similar papers (excluding self)
-        similar_papers = find_most_similar(i, cos_sim)
-        recommend.update(
-            {
-                f"Recommendation {j + 1}": metadata[idx]["paper_id"]
-                for j, idx in enumerate(similar_papers)
-            }
-        )
-        recommend["url"] = m["url"]
-        recommends.append(recommend)
+        for j, paper_id in enumerate(similar_papers):
+            rec[f"Recommendation {j + 1}"] = paper_id
 
-    return recommends
+    return recs
 
 
 if __name__ == "__main__":
     print("*" * 80)
-    print(
-        f"Generating paper recommendations based on {MODEL} using {device}..."
-    )
+    print(f"Generating paper recommendations based on {MODEL} using {device}...")
     start = time()
-    # get all xml files
-    xml_folders = extract_article_folders("dhq-journal/articles")
+    metadata = get_metadata()
+    metadata, recs = validate_metadata(metadata)
 
-    # remove articles in editorial process (should not be considered in recommendation)
-    xml_to_remove = [
-        os.path.join("dhq-journal/articles", f)
-        for f in get_articles_in_editorial_process()
-    ]
-    xml_to_remove.extend(NO_RECOMMEDATIONS)
-    xml_folders = [f for f in xml_folders if f not in xml_to_remove]
-
-    metadata = []
-    for xml_folder in xml_folders:
-        paper_id = xml_folder.split("/").pop()
-        paper_path = os.path.join(xml_folder, f"{paper_id}.xml")
-        if os.path.exists(paper_path):
-            m = extract_relevant_elements(xml_folder)
-            has_zero_length_value = False
-            for key, value in m.items():
-                if value == "":
-                    print(
-                        f"{m['paper_id']}'s {key} is missing. "
-                        f"Will not be included in the recommendations."
-                    )
-                    has_zero_length_value = True
-            if not has_zero_length_value:
-                metadata.append(m)
-
-    # sort metadata before embedding computation
-    metadata = sorted(metadata, key=lambda x: x["paper_id"])
-
-    # generate embeddings using recommended method
-    # https://huggingface.co/allenai/specter2
+    # generate embeddings using SPECTER2
     tokenizer = AutoTokenizer.from_pretrained(MODEL)
     model = AutoAdapterModel.from_pretrained(MODEL)
-    model.load_adapter("allenai/specter2", source="hf", load_as="specter2",
-                       set_active=True)
+    model.load_adapter(
+        "allenai/specter2", source="hf", load_as="specter2", set_active=True
+    )
     model.to(device)
 
     # combine title and abstract separated with a sep_token for SPECTER input
@@ -167,20 +120,14 @@ if __name__ == "__main__":
     vecs = generate_embeddings(title_abstracts, tokenizer, model)
 
     # find most similar papers for each paper
-    recommends = find_most_similar_papers(metadata, vecs)
+    recs = find_most_similar_papers(recs, vecs)
 
     # output recommendations
-    header = list(recommends[0].keys())
-    header.append(header.pop(header.index("url")))
-    with open(tsv_path, "w", newline="", encoding="utf-8") as file:
-        writer = csv.DictWriter(file, fieldnames=header, delimiter="\t")
-        writer.writeheader()
-        for row in recommends:
-            writer.writerow(row)
+    sort_then_save(recs, SPCTR_TSV_PATH)
 
     print(
-        f"Each paper's top 10 similar papers, along with additional metadata, have "
-        f"been successfully saved to {tsv_path}. {len(recommends)} papers are in the "
+        f"Each paper's top 10 similar papers, along with additional metadata, have\n"
+        f"been successfully saved to {SPCTR_TSV_PATH}. {len(recs)} papers are in the\n"
         f"recommendation list. This used {round(time() - start)} seconds."
     )
     print("*" * 80)

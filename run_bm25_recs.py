@@ -5,22 +5,16 @@ This module contains scripts to find the most similar papers based on the full t
 
 __author__ = "The Digital Humanities Quarterly Data Analytics Team"
 __license__ = "MIT"
-__version__ = "0.0.4"
+__version__ = "0.0.5"
 
-import csv
-import os
+
 from typing import List
 
 import numpy as np
 import scipy.sparse as sp
 from sklearn.feature_extraction.text import TfidfVectorizer
 
-from utils import (check_metadata, extract_article_folders,
-                   extract_relevant_elements,
-                   get_articles_in_editorial_process,
-                   NO_RECOMMEDATIONS)
-
-tsv_path = "dhq-recs-zfill-bm25.tsv"
+from utils import BM25_TSV_PATH, get_metadata, sort_then_save, validate_metadata
 
 
 def compute_bm25_scores(
@@ -91,58 +85,33 @@ def compute_bm25_scores(
 if __name__ == "__main__":
     print("*" * 80)
     print("Generating paper recommendations based on the full text using BM25...")
-    # get all xml files
-    xml_folders = extract_article_folders("dhq-journal/articles")
-    # remove articles in editorial process (should not be considered in recommendation)
-    xml_to_remove = [
-        os.path.join("dhq-journal/articles", f)
-        for f in get_articles_in_editorial_process()
-    ]
-    xml_to_remove.extend(NO_RECOMMEDATIONS)
-    xml_folders = [f for f in xml_folders if f not in xml_to_remove]
 
-    metadata = []
-    for xml_folder in xml_folders:
-        paper_id = xml_folder.split("/").pop()
-        paper_path = os.path.join(xml_folder, f"{paper_id}.xml")
-        if os.path.exists(paper_path):
-            metadata.append(extract_relevant_elements(xml_folder))
-
-    # filter out papers ill-annotated
-    indices, recommends = check_metadata(metadata)
+    metadata = get_metadata()
+    metadata, recs = validate_metadata(metadata)
 
     # combine title, abstract, and body text for BM25 input
-    documents = [
+    docs = [
         f"{m.get('title', '')} {m.get('abstract', '')} {m.get('body_text', '')}"
-        for i, m in enumerate(metadata) if i in indices
+        for m in metadata
     ]
-    # computing similarity in a doc * doc matrix
-    scores = compute_bm25_scores(documents, documents)
+    # compute similarity in a doc * doc matrix
+    scores = compute_bm25_scores(docs, docs)
 
-    # add recommendations
-    for index, recommend in enumerate(recommends):
-        top_indices = np.argsort(scores.toarray()[index, :])[::-1][1:11]
-        recommend.update(
+    # add recommendations iteratively
+    for idx, rec in enumerate(recs):
+        sim_paper_indices = np.argsort(scores.toarray()[idx, :])[::-1][1:11]
+        rec.update(
             {
-                f"Recommendation {idx + 1}": recommends[t_i]["Article ID"]
-                for idx, t_i in enumerate(top_indices)
+                f"Recommendation {i + 1}": recs[paper_idx]["Article ID"]
+                for i, paper_idx in enumerate(sim_paper_indices)
             }
         )
 
     # sort and save
-    recommends = sorted(recommends, key=lambda x: x["Article ID"])
-    header = list(recommends[0].keys())
-    # move 'url' to the end to follow naming conventions
-    header.append(header.pop(header.index("url")))
-
-    with open(tsv_path, "w", newline="", encoding="utf-8") as file:
-        writer = csv.DictWriter(file, fieldnames=header, delimiter="\t")
-        writer.writeheader()
-        for row in recommends:
-            writer.writerow(row)
+    sort_then_save(recs, BM25_TSV_PATH)
     print(
         f"Each paper's top 10 similar papers, along with additional metadata, have\n"
-        f"been successfully saved to {tsv_path}. {len(recommends)} papers are in the "
+        f"been successfully saved to {BM25_TSV_PATH}. {len(recs)} papers are in the\n"
         f"BM25-based recommendation using title, abstract, and body text."
     )
     print("*" * 80)

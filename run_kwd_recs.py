@@ -5,59 +5,40 @@ Scheme assignments (i.e., DHQ keyword).
 
 __author__ = "The Digital Humanities Quarterly Data Analytics Team"
 __license__ = "MIT"
-__version__ = "0.0.4"
+__version__ = "0.0.5"
 
-import csv
-import os
+
 import random
 from itertools import chain
-from typing import Dict, List, Set, Tuple
+from typing import Dict, List, Tuple
 
 import numpy as np
 
-from utils import (
-    extract_article_folders,
-    extract_relevant_elements,
-    get_articles_in_editorial_process,
-    NO_RECOMMEDATIONS
-)
+from utils import KWD_TSV_PATH, get_metadata, sort_then_save, validate_metadata
 
-tsv_path = "dhq-recs-zfill-kwd.tsv"
 
-def construct_binary_matrix(metadata: List[Dict]) -> Tuple:
+def construct_binary_matrix(metadata: List[Dict]) -> np.ndarray:
     """
-    Construct a binary matrix representing the presence or absence of keywords in
-    papers.
+    Construct a binary matrix representing the presence of keywords in papers.
 
     Args:
         metadata: A list of dictionaries containing paper metadata.
 
     Returns:
-        A tuple containing the binary matrix, list of paper IDs, list of DHQ
-        keywords, and a mapping of paper ID to row index.
+        A binary matrix where rows represent papers and columns represent keywords.
     """
-    # get all dhq_keywords
-    dhq_keywords: Set[str] = set(chain(*[m["dhq_keywords"] for m in metadata]))
+    dhq_keywords = set(chain(*[m["dhq_keywords"] for m in metadata]))
     dhq_keywords.discard("")
     dhq_keywords = list(dhq_keywords)
 
-    # create a mapping of keyword to column index
-    keyword_to_index: Dict[str, int] = {
-        keyword: idx for idx, keyword in enumerate(dhq_keywords)
-    }
+    keyword_to_index = {keyword: idx for idx, keyword in enumerate(dhq_keywords)}
 
-    # extract unique paper IDs and sort them
-    paper_ids: List[str] = sorted({paper["paper_id"] for paper in metadata})
+    paper_ids = [paper["paper_id"] for paper in metadata]
 
-    # create a mapping of paper ID to row index
-    paper_to_row: Dict[str, int] = {
-        paper_id: idx for idx, paper_id in enumerate(paper_ids)
-    }
+    paper_to_row = {paper_id: idx for idx, paper_id in enumerate(paper_ids)}
 
-    # initialize a blank matrix of zeros with the correct shape
-    binary_matrix: np.ndarray = np.zeros((len(paper_ids), len(dhq_keywords)), dtype=int)
+    binary_matrix = np.zeros((len(paper_ids), len(dhq_keywords)), dtype=int)
 
-    # fill the matrix
     for paper in metadata:
         row_idx = paper_to_row[paper["paper_id"]]
         for keyword in paper["dhq_keywords"]:
@@ -69,7 +50,7 @@ def construct_binary_matrix(metadata: List[Dict]) -> Tuple:
         f"Total: {len(dhq_keywords)} unique DHQ keywords and {len(paper_ids)} "
         f"papers are under consideration."
     )
-    return binary_matrix, paper_ids, dhq_keywords, paper_to_row
+    return binary_matrix
 
 
 def calculate_normalized_similarity(binary_matrix: np.ndarray) -> np.ndarray:
@@ -155,82 +136,32 @@ def find_similar_papers_by_paper_id(
 if __name__ == "__main__":
     print("*" * 80)
     print("Generating papers recommendations based on the DHQ Classification Scheme...")
-    # get all xml files
-    xml_folders = extract_article_folders("dhq-journal/articles")
+    metadata = get_metadata()
+    metadata, recs = validate_metadata(metadata)
 
-    # remove articles in editorial process (should not be considered in recommendation)
-    xml_to_remove = [
-        os.path.join("dhq-journal/articles", f)
-        for f in get_articles_in_editorial_process()
-    ]
-    xml_to_remove.extend(NO_RECOMMEDATIONS)
-    xml_folders = [f for f in xml_folders if f not in xml_to_remove]
-
-    metadata = []
-    for xml_folder in xml_folders:
-        paper_id = xml_folder.split("/").pop()
-        paper_path = os.path.join(xml_folder, f"{paper_id}.xml")
-        if os.path.exists(paper_path):
-            metadata.append(extract_relevant_elements(xml_folder))
-
-    binary_matrix, paper_ids, keywords, paper_to_row = construct_binary_matrix(metadata)
+    binary_matrix = construct_binary_matrix(metadata)
     similarity_matrix = calculate_normalized_similarity(binary_matrix)
 
-    # uncomment below and check if output is reasonable
-    # print(find_similar_papers_by_paper_id('000448',
-    #                                       similarity_matrix,
-    #                                       paper_to_row,
-    #                                       paper_ids,
-    #                                       metadata,
-    #                                       verbose=True))
+    paper_ids = [m["paper_id"] for m in metadata]
+    paper_to_row = {paper_id: idx for idx, paper_id in enumerate(paper_ids)}
 
-    # computing results
-    recommends = []
-    for m in metadata:
-        # pick up the naming used in an early repo
-        recommend = {
-            "Article ID": m["paper_id"],
-            "Pub. Year": m["publication_year"],
-            "Authors": m["authors"],
-            "Affiliations": m["affiliations"],
-            "Title": m["title"],
-        }
-        # check for 0-length text and print the corresponding key
-        has_zero_length_value = False
-        for key, value in recommend.items():
-            if value == "":
-                print(
-                    f"{m['paper_id']}'s {key} is missing."
-                    f" Will not be included in the recommendations."
-                )
-                has_zero_length_value = True
-        raw_recommend = find_similar_papers_by_paper_id(
-            m["paper_id"], similarity_matrix, paper_to_row, paper_ids, metadata
-        )
-        for i, r in enumerate(raw_recommend):
-            recommend[f"Recommendation {i + 1}"] = r
+    # Add recommendations iteratively
+    for idx, rec in enumerate(recs):
+        row_index = paper_to_row[rec["Article ID"]]
+        similarity_scores = similarity_matrix[row_index, :]
+        similarity_scores[row_index] = -np.inf  # ignore self-similarity
 
-        # add the URL at the end
-        recommend["url"] = m["url"]
-        # skip those with missing fields
-        if not has_zero_length_value:
-            recommends.append(recommend)
-    # sort list based on 'Article ID'
-    recommends = sorted(recommends, key=lambda x: x["Article ID"])
+        sorted_indices = np.argsort(-similarity_scores)[:10]
+        similar_papers = [paper_ids[i] for i in sorted_indices]
 
-    # output
-    header = list(recommends[0].keys())
-    # move 'url' to the end to follow naming conventions is a previous repo
-    header.append(header.pop(header.index("url")))
+        for i, paper_id in enumerate(similar_papers):
+            rec[f"Recommendation {i + 1}"] = paper_id
 
-    with open(tsv_path, "w", newline="", encoding="utf-8") as file:
-        writer = csv.DictWriter(file, fieldnames=header, delimiter="\t")
-        writer.writeheader()
-        for row in recommends:
-            writer.writerow(row)
+    sort_then_save(recs, KWD_TSV_PATH)
+
     print(
         f"Each paper's top 10 similar papers, along with additional metadata, have\n"
-        f"been successfully saved to {tsv_path}. {len(recommends)} papers are in the "
+        f"been successfully saved to {KWD_TSV_PATH}. {len(recs)} papers are in the\n"
         f"keyword-based recommendation."
     )
     print("*" * 80)
