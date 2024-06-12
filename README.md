@@ -16,9 +16,9 @@ the paper's title and abstract.
 ## Use
 To get a set of the most updated recommendations when changes have been introduced to the DHQ-journal repository, please 
 click `Run workflow` at 
-**[GitHub Actions](https://github.com/Wang-Haining/DHQ-similar-papers/actions/workflows/ci.yml)** to get the 
-corresponding recommendations.
-It will also automatically run every Sunday at midnight.
+**[GitHub Actions](https://github.com/Wang-Haining/DHQ-similar-papers/actions/workflows/update_tsvs_now.yml)**.
+It will also automatically update the tsv files every Sunday at midnight if 
+[dhq-journal](https://github.com/Digital-Humanities-Quarterly/dhq-journal) repository changes.
 
 The ten most similar article IDs for each of the systems are documented in
 - [`dhq-recs-zfill-kwd.tsv`](https://github.com/Wang-Haining/DHQ-similar-papers/blob/main/dhq-recs-zfill-kwd.tsv)
@@ -39,7 +39,8 @@ as well. Papers in the editorial process are not considered.
 4. Retrieve the most similar papers from the similarity matrix, utilizing a random seed to handle ties in rankings.
 
 ## Reproduction
-
+<details>
+  <summary>Click to expand</summary>
 To reproduce the recommendations on your own machine (not recommended for production), please use the following 
 commands:
 
@@ -67,11 +68,7 @@ python -m run_bm25_recs
 # execute the SPECTER2 recommendation
 python -m run_spctr_recs
 ```
-
-
-## To-Do List:
-1. Write more unit tests.
-Fix title extract (e.g., quotes in titles 000664).
+</details>
 
 ## License
 MIT
@@ -82,6 +79,8 @@ The Digital Humanities Quarterly Data Analytics Team
 ## Contribution
 Please open an issue for any suggestions, thank you!
 
+<details>
+  <summary>Click to expand</summary>
 ## History
 - v0.0.1: 
   - Implemented the keyword-based recommendation system.
@@ -103,3 +102,4 @@ Please open an issue for any suggestions, thank you!
 - v0.0.5
   - Streamlined utilities.
   - Added a pipeline for recs recalculation regardless of submodule updates.
+</details>
