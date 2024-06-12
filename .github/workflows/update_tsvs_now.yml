@@ -1,4 +1,4 @@
-name: Update recommendations manually
+name: Update recommendations now
 
 on:
   workflow_dispatch:
@@ -53,5 +53,5 @@ jobs:
           git config --global user.email 'github-actions[bot]@users.noreply.github.com'
           TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
           git add dhq-recs*.tsv
-          git commit -m "feat: update recommendations due to weekly update on ${TIMESTAMP}"
+          git commit -m "feat: update recommendations due to request on ${TIMESTAMP}"
           git push https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git HEAD:main
