@@ -100,3 +100,6 @@ Please open an issue for any suggestions, thank you!
   - Added unit tests.
   - Dumped `annoy` for spctr method.
   - Added a rule to Actions to run tests before commit.
+- v0.0.5
+  - Streamlined utilities.
+  - Added a pipeline for recs recalculation regardless of submodule updates.
