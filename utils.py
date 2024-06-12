@@ -282,12 +282,12 @@ def validate_metadata(metadata: list) -> Tuple[list, list]:
                 if key == "Affiliations" and rec["Authors"]:
                     print(
                         f"{m['paper_id']} seems to be a corporate author because its "
-                        f"{key} is missing but {rec['Affiliations']=} isn't. "
+                        f"{key} is missing but {rec['Authors']=} isn't. "
                         f"Will be included in the recommendations."
                     )
                 else:
                     print(
-                        f"{m['paper_id']}'s {key} is missing."
+                        f"{m['paper_id']}'s {key} is missing. "
                         f"Will not be included in the recommendations."
                     )
                     has_zero_length_value = True
