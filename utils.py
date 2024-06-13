@@ -12,7 +12,7 @@ import os
 import re
 from typing import Dict, List, Optional, Tuple, Union
 
-from bs4 import BeautifulSoup, NavigableString, Tag
+from bs4 import BeautifulSoup, Tag, Comment
 
 # some papers should not have recommendations, e.g., remembrance pieces
 INGORE_ARTICLES = ["dhq-journal/articles/000493"]
@@ -114,33 +114,24 @@ def extract_relevant_elements(xml_folder: str) -> Dict[str, Optional[str]]:
     # extract title
     title_tag = soup.find("title")
     if title_tag:
-        quotes_title_tag = title_tag.find("title", {"rend": "quotes"})
-        if quotes_title_tag:
-            # extract text before the quoted title
-            before_quotes = "".join(
+        # find quotes via the <title> tag
+        for quotes_title_tag in title_tag.find_all("title", {"rend": "quotes"}):
+            quotes_title_tag.replace_with(f'"{quotes_title_tag.text}"')
+        # find quotes via the <q> tag
+        for quotes_tag in title_tag.find_all("q"):
+            quotes_tag.replace_with(f'"{quotes_tag.text}"')
+        # extract all comments
+        for comment in title_tag.find_all(string=lambda text:isinstance(text, Comment)):
+            comment.extract()
+        # remove tags but keep contents for all other tags
+        for other_tags in title_tag.find_all(True):
+            other_tags.replace_with(f"{other_tags.text}")
+        # join title contents together
+        title_tag = "".join(
                 str(content)
                 for content in title_tag.contents
-                if isinstance(content, NavigableString)
             )
-            before_quotes = before_quotes.split(str(quotes_title_tag))[0].strip()
-            before_quotes = remove_excessive_space(before_quotes)
-
-            # extract the quoted title
-            quotes = f' "{remove_excessive_space(quotes_title_tag.text)}"'
-
-            # extract text after the quoted title
-            after_quotes = "".join(
-                str(content)
-                for content in title_tag.contents
-                if isinstance(content, NavigableString)
-                and content not in quotes_title_tag.contents
-            )
-            after_quotes = after_quotes.split(str(quotes_title_tag))[-1].strip()
-            after_quotes = remove_excessive_space(after_quotes)
-
-            title = before_quotes + quotes + " " + after_quotes
-        else:
-            title = remove_excessive_space(title_tag.text)
+        title = remove_excessive_space(title_tag)
     else:
         title = ""
 
@@ -347,7 +338,7 @@ def sort_then_save(recs: List[Dict[str, str]], tsv_path: str) -> None:
     header.append(header.pop(header.index("url")))
 
     with open(tsv_path, "w", newline="", encoding="utf-8") as file:
-        writer = csv.DictWriter(file, fieldnames=header, delimiter="\t")
+        writer = csv.DictWriter(file, fieldnames=header, delimiter="\t", quotechar=None, quoting=csv.QUOTE_NONE)
         writer.writeheader()
         for row in recs:
             writer.writerow(row)
