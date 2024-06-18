@@ -162,22 +162,33 @@ def extract_relevant_elements(xml_folder: str) -> Dict[str, Optional[str]]:
     )
 
     # extract authors and affiliations
+    # @joelsjlee - 6/17/2024 - Create another column to supply the author
+    # alongside its respective affiliation, separated by a comma,
+    # with each unit of author-affiliation separated by a semi-colon
     authors_tag = []
     affiliations_tag = []
+    author_affil_set = []
     for author_info in soup.find_all("dhq:authorInfo"):
+        author_affil_string = ""
         author_name_tag = author_info.find("dhq:author_name")
         if author_name_tag:
             # extract the full name as text, including proper spacing
             full_name = " ".join(author_name_tag.stripped_strings)
             authors_tag.append(full_name)
+            author_affil_string += full_name
         else:
             authors_tag.append("")
         affiliation_tag = author_info.find("dhq:affiliation")
-        affiliation = affiliation_tag.get_text(strip=True) if affiliation_tag else ""
+        affiliation = ""
+        if affiliation_tag:
+            affiliation = affiliation_tag.get_text(strip=True)
+            author_affil_string += ", " + affiliation
         affiliations_tag.append(affiliation)
+        author_affil_set.append(author_affil_string)
 
     authors = " | ".join([remove_excessive_space(name) for name in authors_tag])
     affiliations = " | ".join([remove_excessive_space(aff) for aff in affiliations_tag])
+    author_affils = "; ".join([remove_excessive_space(author_aff) for author_aff in author_affil_set])
 
     # extract abstract
     abstract_tag = soup.find("dhq:abstract")
@@ -215,6 +226,7 @@ def extract_relevant_elements(xml_folder: str) -> Dict[str, Optional[str]]:
         "url": url,
         "dhq_keywords": dhq_keywords,
         "body_text": body_text.strip(),
+        "author_affils": author_affils
     }
 
 
@@ -260,6 +272,7 @@ def validate_metadata(metadata: list) -> Tuple[list, list]:
             "Pub. Year": m["publication_year"],
             "Authors": m["authors"],
             "Affiliations": m["affiliations"],
+            "Authors with Affiliations": m["author_affils"],
             "Title": m["title"],
             "url": m["url"],
         }
