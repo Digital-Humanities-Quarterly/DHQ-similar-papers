@@ -2,13 +2,13 @@ name: Update recommendations weekly
 
 on:
   schedule:
-    # runs every Sunday at midnight
-    - cron: '0 0 * * 0'
+    # run every 1st and 15th of the month at midnight
+    - cron: '0 0 1,15 * *'
   workflow_dispatch:
 
 jobs:
   check-and-recompute:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
 
     steps:
       # step 1: checkout the repository
