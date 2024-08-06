@@ -75,7 +75,7 @@ MIT
 The Digital Humanities Quarterly Data Analytics Team
 
 ## Contribution
-Please open an issue for any suggestions, thank you!
+Please open a ticket for any issues or suggestions, thank you!
 
 
 ## History
