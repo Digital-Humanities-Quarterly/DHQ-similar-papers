@@ -5,7 +5,7 @@ on:
 
 jobs:
   recompute-recommendations:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
 
     steps:
       # step 1: checkout the repository
