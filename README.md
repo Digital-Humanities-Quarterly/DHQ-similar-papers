@@ -69,7 +69,9 @@ python -m run_spctr_recs
 </details>
 
 ## License
-MIT
+This code and recommendation files are dedicated to the public domain under the CC0 1.0 Universal Public Domain Dedication, 
+allowing unrestricted use, modification, and distribution.
+
 
 ## Author
 The Digital Humanities Quarterly Data Analytics Team
