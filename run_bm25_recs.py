@@ -4,7 +4,7 @@ This module contains scripts to find the most similar papers based on the full t
 """
 
 __author__ = "The Digital Humanities Quarterly Data Analytics Team"
-__license__ = "MIT"
+__license__ = "CC0"
 __version__ = "0.0.5"
 
 

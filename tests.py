@@ -1,3 +1,12 @@
+"""
+This module contains tests for the DHQ recommmendation system.
+"""
+
+__author__ = "The Digital Humanities Quarterly Data Analytics Team"
+__license__ = "CC0"
+__version__ = "0.0.5"
+
+
 import csv
 import unittest
 
