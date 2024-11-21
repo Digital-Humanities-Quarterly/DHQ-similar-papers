@@ -1,4 +1,4 @@
-name: Update recommendations weekly
+name: Update recommendations biweekly
 
 on:
   schedule:
