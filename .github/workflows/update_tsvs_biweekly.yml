@@ -2,7 +2,6 @@ name: Update recommendations weekly
 
 on:
   schedule:
-    # run every 1st and 15th of the month at midnight
     - cron: '0 0 1,15 * *'
   workflow_dispatch:
 
@@ -11,36 +10,32 @@ jobs:
     runs-on: ubuntu-22.04
 
     steps:
-      # step 1: checkout the repository
       - name: Checkout repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
-          submodules: true # checkout submodules as well
+          submodules: recursive
+          fetch-depth: 0
 
-      # step 2: setup Python environment
       - name: Set up Python
         uses: actions/setup-python@v2
         with:
           python-version: '3.10'
 
-      # step 3: install dependencies
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           python -m pip install -r requirements.txt
 
-      # step 4: check for submodule updates
       - name: Check for submodule updates
         id: submodule_check
         run: |
-          git submodule update --remote
+          git submodule foreach 'git fetch origin main && git checkout origin/main && git pull origin main'
           if [ "$(git status --porcelain)" != "" ]; then
             echo "submodule_updated=true" >> $GITHUB_ENV
           else
             echo "submodule_updated=false" >> $GITHUB_ENV
           fi
 
-      # step 5: rerun the computations if submodule is updated
       - name: Run keyword-based recommendation system
         if: env.submodule_updated == 'true'
         run: python run_kwd_recs.py
@@ -53,15 +48,13 @@ jobs:
         if: env.submodule_updated == 'true'
         run: python run_spctr_recs.py
 
-      # step 6: run the unit tests
       - name: Run unit tests
         run: |
-          set +e  # Continue execution even if the tests fail
+          set +e
           python tests.py > tests.log 2>&1
           cat tests.log
         continue-on-error: true
 
-      # step 7: commit and push changes if there are any
       - name: Commit and push changes
         if: env.submodule_updated == 'true'
         env:
@@ -71,7 +64,6 @@ jobs:
           git config --global user.email 'github-actions[bot]@users.noreply.github.com'
           TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
           git add dhq-recs*.tsv
-          git submodule update --remote
           git add dhq-journal
           git commit -m "feat: update recommendations due to submodule update on ${TIMESTAMP}"
           git push https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git HEAD:main
