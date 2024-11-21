@@ -17,7 +17,7 @@ the paper's title and abstract.
 To get a set of the most updated recommendations when changes have been introduced to the DHQ-journal repository, please 
 click `Run workflow` at 
 **[GitHub Actions](https://github.com/Wang-Haining/DHQ-similar-papers/actions/workflows/update_tsvs_now.yml)**.
-It will also automatically update the tsv files every Sunday at midnight if 
+It will also automatically update the tsv files every 1st and 15th at midnight if 
 [dhq-journal](https://github.com/Digital-Humanities-Quarterly/dhq-journal) repository changes.
 
 The ten most similar article IDs for each of the systems are documented in
@@ -84,24 +84,25 @@ Please open a ticket for any issues or suggestions, thank you!
 <details>
   <summary>Click to expand</summary>
 
-- v0.0.1: 
-  - Implemented the keyword-based recommendation system.
-- v0.0.2:
-  - Implemented the full text-based recommendation system.
-  - Included logic for removing papers in the editorial process.
-  - Refactored the keyword-based recommendation system.
-  - Updated data files for both systems.
-- v0.0.3
-  - Merged Ben's SPECTER method.
-  - Added CI pipeline with Actions.
-  - Improved module/var naming.
-  - Updated data files.
+- v0.0.5
+  - Streamlined utilities.
+  - Added a pipeline for recs recalculation regardless of submodule updates.
 - v0.0.4
   - Ignored remembrance pieces in recommendations.
   - Added unit tests.
   - Dumped `annoy` for spctr method.
   - Added a rule to Actions to run tests before commit.
-- v0.0.5
-  - Streamlined utilities.
-  - Added a pipeline for recs recalculation regardless of submodule updates.
+- v0.0.3
+  - Merged Ben's SPECTER method.
+  - Added CI pipeline with Actions.
+  - Improved module/var naming.
+  - Updated data files.
+- v0.0.2:
+  - Implemented the full text-based recommendation system.
+  - Included logic for removing papers in the editorial process.
+  - Refactored the keyword-based recommendation system.
+  - Updated data files for both systems.
+- v0.0.1: 
+  - Implemented the keyword-based recommendation system.
+
 </details>
