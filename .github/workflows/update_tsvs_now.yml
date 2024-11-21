@@ -8,25 +8,31 @@ jobs:
     runs-on: ubuntu-22.04
 
     steps:
-      # step 1: checkout the repository
+      # Step 1: Checkout the repository with submodules
       - name: Checkout repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
-          submodules: true # checkout submodules as well
+          submodules: recursive  # Checkout submodules recursively
+          fetch-depth: 0         # Fetch full history to ensure submodules are up to date
 
-      # step 2: setup Python environment
+      # Step 2: Set up Python environment
       - name: Set up Python
         uses: actions/setup-python@v2
         with:
           python-version: '3.10'
 
-      # step 3: install dependencies
+      # Step 3: Install dependencies
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           python -m pip install -r requirements.txt
 
-      # step 4: run recommendation systems
+      # Step 4: Update submodules to the latest commit
+      - name: Update submodules to latest
+        run: |
+          git submodule foreach 'git fetch origin main && git checkout origin/main && git pull origin main'
+
+      # Step 5: Run recommendation systems
       - name: Run keyword-based recommendation system
         run: python run_kwd_recs.py
 
@@ -36,7 +42,7 @@ jobs:
       - name: Run SPECTER recommendation system
         run: python run_spctr_recs.py
 
-      # step 5: run the unit tests
+      # Step 6: Run the unit tests
       - name: Run unit tests
         run: |
           set +e  # Continue execution even if the tests fail
@@ -44,7 +50,7 @@ jobs:
           cat tests.log
         continue-on-error: true
 
-      # step 6: commit and push changes if there are any
+      # Step 7: Commit and push changes if there are any
       - name: Commit and push changes
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -53,6 +59,10 @@ jobs:
           git config --global user.email 'github-actions[bot]@users.noreply.github.com'
           TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
           git add dhq-recs*.tsv
-          git commit -m "feat: update recommendations due to request on ${TIMESTAMP}"
-          git pull --rebase
-          git push https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git HEAD:main
+          git add dhq-journal
+          if [ -n "$(git status --porcelain)" ]; then
+            git commit -m "feat: update recommendations due to request on ${TIMESTAMP}"
+            git push https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git HEAD:main
+          else
+            echo "No changes to commit"
+          fi
