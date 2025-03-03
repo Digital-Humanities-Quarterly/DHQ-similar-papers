@@ -1,0 +1,41 @@
+name: push_to_encoding
+
+on: workflow_dispatch
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout Source repo
+      uses: actions/checkout@v3
+
+    - name: Copy data folder to temp folder
+      run: |
+        mkdir temp-folder
+        cp {dhq-recs-zfill-bm25.tsv, dhq-recs-zfill-kwd.tsv, dhq-recs-zfill-spctr.tsv} temp-folder/
+
+    - name: Checkout mhs-web repo
+      uses: actions/checkout@v3
+      with:
+        repository: Digital-Humanities-Quarterly/dhq-journal
+        token: ${{ secrets.GITHUB_TOKEN }}
+        path: dhq-journal
+    
+    - name: Checkout encoding_workflow branch
+      run: |
+        cd dhq-journal
+        git fetch origin
+        git checkout encoding_workflow
+        git pull origin encoding_workflow
+
+    - name: Move files to encoding_workflow
+      env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        cp temp-folder/{dhq-recs-zfill-bm25.tsv, dhq-recs-zfill-kwd.tsv, dhq-recs-zfill-spctr.tsv} dhq-journal/data/dhq-recs/
+        cd dhq-journal
+        git config --global user.name 'github-actions[bot]'
+        git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+        git add .
+        git commit -m "Moved files from DHQ-Similar-Papers repo to encoding_workflow branch"
+        git push origin encoding_workflow
