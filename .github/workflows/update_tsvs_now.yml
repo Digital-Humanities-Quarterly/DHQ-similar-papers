@@ -27,10 +27,10 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install -r requirements.txt
 
-      # Step 4: Update submodules to the latest commit
+      # Step 4: Update submodules to the latest commit from static_site_generation branch
       - name: Update submodules to latest
         run: |
-          git submodule foreach 'git fetch origin main && git checkout origin/main && git pull origin main'
+          git submodule foreach 'git fetch origin static_site_generation && git checkout origin/static_site_generation && git pull origin static_site_generation'
 
       # Step 5: Run recommendation systems
       - name: Run keyword-based recommendation system
