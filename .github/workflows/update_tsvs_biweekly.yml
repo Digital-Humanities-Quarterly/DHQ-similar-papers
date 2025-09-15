@@ -29,7 +29,7 @@ jobs:
       - name: Check for submodule updates
         id: submodule_check
         run: |
-          git submodule foreach 'git fetch origin static_site_generation && git checkout origin/static_site_generation && git pull origin static_site_generation'
+          git submodule foreach 'git fetch origin encoding_workflow && git checkout origin/encoding_workflow && git pull origin encoding_workflow'
           if [ "$(git status --porcelain)" != "" ]; then
             echo "submodule_updated=true" >> $GITHUB_ENV
           else
