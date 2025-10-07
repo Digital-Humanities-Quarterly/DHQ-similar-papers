@@ -13,7 +13,7 @@ jobs:
         uses: actions/checkout@v3
         with:
           submodules: recursive  # Checkout submodules recursively
-          fetch-depth: 0         # Fetch full history to ensure submodules are up to date
+          fetch-depth: 1         # Edited to try a shallower fetch-depth, running into no space errors
 
       # Step 2: Set up Python environment
       - name: Set up Python
