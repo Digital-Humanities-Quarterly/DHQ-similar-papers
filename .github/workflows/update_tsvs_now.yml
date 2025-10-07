@@ -30,7 +30,7 @@ jobs:
       # Step 4: Update submodules to the latest commit from encoding_workflow branch
       - name: Update submodules to latest
         run: |
-          git submodule foreach 'git fetch origin encoding_workflow && git checkout origin/encoding_workflow && git pull origin encoding_workflow'
+          git submodule foreach 'git fetch --depth=1 origin encoding_workflow && git checkout FETCH_HEAD'
 
       # Step 5: Run recommendation systems
       - name: Run keyword-based recommendation system
