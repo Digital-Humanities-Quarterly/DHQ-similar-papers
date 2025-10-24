@@ -8,6 +8,14 @@ jobs:
     runs-on: ubuntu-22.04
 
     steps:
+      # Step 0: Clear some of the cached tools
+      - name: Clear out some of the hostel tools cache
+        run: |
+          rm -rf /opt/hostedtoolcache/CodeQL
+          rm -rf /opt/hostedtoolcache/Ruby
+          rm -rf /opt/hostedtoolcache/node
+          rm -rf /opt/hostedtoolcache/go
+          rm -rf /opt/hostedtoolcache/PyPy
       # Step 1: Checkout the repository with submodules
       - name: Checkout repository
         uses: actions/checkout@v3
