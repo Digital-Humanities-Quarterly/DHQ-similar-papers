@@ -157,7 +157,7 @@ def extract_relevant_elements(xml_folder: str) -> Dict[str, Optional[str]]:
 
     # heuristically construct url using volume, issue, and paper_id
     url = (
-        f"https://digitalhumanities.org/dhq/vol/"
+        f"https://dhq.digitalhumanities.org/vol/"
         f"{volume}/{issue}/{paper_id}/{paper_id}.html"
     )
 
